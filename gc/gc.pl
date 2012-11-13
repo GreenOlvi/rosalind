@@ -1,56 +1,31 @@
-#/usr/bin/perl
+#!/usr/bin/perl
 
 use strict;
 use warnings;
 
-my $curr_label = '';
-my $curr_input = [];
-my $max_label = '';
-my $max_count = 0;
+use Bio::SeqIO;
 
-while (<>) {
-   chomp;
-   next unless $_;
-   if (/^>/) {
-      my $new_label = $_;
+my $seqio = Bio::SeqIO->new(
+   -file   => $ARGV[0],
+   -format => 'Fasta'
+);
 
-      if (@$curr_input) {
-	 analyze($curr_label, join('', @$curr_input));
-	 $curr_input = [];
-      }
-
-      $new_label =~ s/^>//;
-      $curr_label = $new_label;
-   } else {
-      push @$curr_input, $_;
+my $max = { gc => 0, id => '' };
+while (my $seq = $seqio->next_seq) {
+   my $c = count($seq->seq);
+   if ($max->{gc} < $c) {
+      $max = {
+         gc => $c,
+         id => $seq->display_id,
+      };
    }
 }
 
-if (@$curr_input) {
-   analyze($curr_label, join('', @$curr_input));
-   $curr_input = [];
-}
-
-print join "\n", $max_label, sprintf('%0.5f%%', $max_count);
-
-1;
-
-sub analyze {
-   my $label = shift;
-   my $in    = shift;
-   my $c     = count($in);
-
-   print "[$c]\n";
-   if ($c > $max_count) {
-      $max_count = $c;
-      $max_label = $label;
-   }
-}
+printf("%s\n%0.6f%%\n", $max->{id}, $max->{gc});
 
 sub count {
    my $in = shift;
-   print length $in, "\n";
-   my $tmp = $in;
-   my $gc = ($tmp =~ tr/GC/../);
+   my $gc = ($in =~ s/[GC]/-/g);
    return ($gc / length($in)) * 100;
 }
+

@@ -30,13 +30,13 @@ while (<>) {
 
 sub orf {
    my $in = shift;
-   my $ret = [];
+   my $ret = {};
 
    foreach my $strand (rna($in), rna(revc($_))) {
-      push @$ret, frames($strand);
+      $ret->{$_} = 1 foreach (frames($strand));
    }
 
-   return @$ret;
+   return sort keys %$ret;
 }
 
 sub rna {
@@ -55,14 +55,14 @@ sub frames {
    my $string = shift;
 
    my @ret = ();
-   while ($string =~ m/(?=(AUG.*(UAA|UAG|UGA)))/g) {
-      push @ret, $1;
+   while ($string =~ m/(?=(AUG(...)*?(UAA|UAG|UGA)))/g) {
+      push @ret, trans($1);
    }
 
    return @ret;
 }
 
 sub trans {
-   my $in = shift;
-   return join '', grep { $_ ne 'Stop' } map { $prot->{$_} } unpack("(A3)*", $_);
+   my $rna = shift;
+   return join '', grep { $_ ne 'Stop' } map { $prot->{$_} } unpack("(A3)*", $rna);
 }

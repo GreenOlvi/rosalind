@@ -12,7 +12,6 @@ while (<>) {
 
 exit 0;
 
-use Data::Dumper;
 sub get_count {
    my $seq = shift;
    my $c = {};
